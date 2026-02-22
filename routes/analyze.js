@@ -21,27 +21,23 @@ async function validateVAT(vatNumber) {
   const clean = vatNumber.replace(/\s/g, '').toUpperCase();
   const countryCode = clean.substring(0, 2);
   const num = clean.substring(2);
-  
+
   if (!EU_COUNTRIES.includes(countryCode)) {
     return { status: 'INVALID' };
   }
 
   try {
-    const r = await fetch(`https://viesapi.eu/api/check/${cc}/${num}`);
-    
+    const response = await fetch(`https://api.viesapi.eu/api/check/${countryCode}/${num}`);
+
     if (!response.ok) {
       return { status: 'NOT_VERIFIED' };
     }
-    
+
     const data = await response.json();
-    
-    if (data.valid === true) {
-      return { status: 'VALID' };
-    } else if (data.valid === false) {
-      return { status: 'INVALID' };
-    } else {
-      return { status: 'NOT_VERIFIED' };
-    }
+
+    if (data.valid === true) return { status: 'VALID' };
+    if (data.valid === false) return { status: 'INVALID' };
+    return { status: 'NOT_VERIFIED' };
   } catch (error) {
     console.error('VIES validation error:', error);
     return { status: 'NOT_VERIFIED' };
@@ -61,29 +57,29 @@ async function analyzeRow(row) {
   const customerCountry = row.customer_country?.toUpperCase();
   const netAmount = parseFloat(row.net_amount) || 0;
   const vatPercent = parseFloat(row.vat_applied_percent);
-  
-  const vatIsNull = row.vat_applied_percent === null || 
-                    row.vat_applied_percent === '' || 
+
+  const vatIsNull = row.vat_applied_percent === null ||
+                    row.vat_applied_percent === '' ||
                     isNaN(vatPercent);
-  
+
   const isEU = (country) => EU_COUNTRIES.includes(country);
   const isCrossBorder = sellerCountry !== customerCountry;
 
-  // Validate VAT number if applicable
   let vatValidation = { status: 'INVALID' };
   if (isEU(customerCountry) && row.customer_vat_number?.trim()) {
     vatValidation = await validateVAT(row.customer_vat_number);
   }
   result.vat_status = vatValidation.status;
 
-  // Business rules
+  // Regla 0
   if (isEU(customerCountry) && vatValidation.status === 'NOT_VERIFIED') {
     result.risk_level = 'MEDIO';
     result.error_type = 'NIF/VAT no verificable en VIES';
     return result;
   }
 
-  if (isCrossBorder && isEU(sellerCountry) && isEU(customerCountry) && 
+  // Regla 1
+  if (isCrossBorder && isEU(sellerCountry) && isEU(customerCountry) &&
       vatValidation.status === 'VALID' && !vatIsNull && vatPercent > 0) {
     result.risk_level = 'ALTO';
     result.error_type = 'Venta B2B intracomunitaria con IVA aplicado';
@@ -91,7 +87,8 @@ async function analyzeRow(row) {
     return result;
   }
 
-  if (isCrossBorder && isEU(sellerCountry) && isEU(customerCountry) && 
+  // Regla 2
+  if (isCrossBorder && isEU(sellerCountry) && isEU(customerCountry) &&
       vatValidation.status === 'INVALID' && !vatIsNull && vatPercent === 0) {
     result.risk_level = 'ALTO';
     result.error_type = 'Venta B2C intracomunitaria sin IVA aplicado';
@@ -100,6 +97,7 @@ async function analyzeRow(row) {
     return result;
   }
 
+  // Regla 3
   if (!isEU(customerCountry) && !vatIsNull && vatPercent > 0) {
     result.risk_level = 'ALTO';
     result.error_type = 'IVA aplicado en exportación fuera UE';
@@ -107,7 +105,8 @@ async function analyzeRow(row) {
     return result;
   }
 
-  if (sellerCountry === customerCountry && isEU(sellerCountry) && 
+  // Regla 5
+  if (sellerCountry === customerCountry && isEU(sellerCountry) &&
       !vatIsNull && vatPercent === 0) {
     result.risk_level = 'MEDIO';
     result.error_type = 'Operación nacional sin IVA aplicado';
@@ -119,16 +118,16 @@ async function analyzeRow(row) {
   return result;
 }
 
-router.post('/analyze', async (req, res) => {
+router.post('/', async (req, res) => {
   const { rows } = req.body;
-  
+
   if (!rows || !Array.isArray(rows) || rows.length === 0) {
     return res.status(400).json({ error: 'No data provided or invalid format' });
   }
 
   try {
     const results = await Promise.all(rows.map(analyzeRow));
-    
+
     const highRisk = results.filter(r => r.risk_level === 'ALTO').length;
     const mediumRisk = results.filter(r => r.risk_level === 'MEDIO').length;
     const totalImpact = results.reduce((sum, r) => sum + (r.impact_estimate || 0), 0);
