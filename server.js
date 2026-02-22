@@ -63,6 +63,7 @@ app.get('/api/auth/callback', async (req, res) => {
 import('./routes/orders.js').then(module => app.use('/api', module.default)).catch(console.error);
 import('./routes/analyze.js').then(module => app.use('/api', module.default)).catch(console.error);
 import('./routes/billing.js').then(module => app.use('/api', module.default)).catch(console.error);
+import('./routes/webhooks.js').then(module => app.use('/api', module.default)).catch(console.error);
 
 app.get('/health', (_, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 
@@ -70,33 +71,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 AITAX Shopify backend running on port ${PORT}`);
   console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
-
-import('./routes/webhooks.js').then(module => app.use('/api', module.default)).catch(console.error);
-```
-
-**Commit**
-
----
-
-### **4. Render redesplegará automáticamente** (2 min)
-
----
-
-### **5. En Shopify Partners → Configuración**
-
-**Webhooks obligatorios:**
-
-**Customer data request:**
-```
-https://app-aitax-backend.onrender.com/api/webhooks/customers/data_request
-```
-
-**Customer redact:**
-```
-https://app-aitax-backend.onrender.com/api/webhooks/customers/redact
-```
-
-**Shop redact:**
-```
-https://app-aitax-backend.onrender.com/api/webhooks/shop/redact
 });
