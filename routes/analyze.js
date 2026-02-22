@@ -109,7 +109,7 @@ async function analyzeRow(row) {
   return result;
 }
 
-router.post('/analyze', async (req, res) => {
+router.post('/', async (req, res) => {
   const { rows } = req.body;
 
   if (!rows || !Array.isArray(rows) || rows.length === 0) {
