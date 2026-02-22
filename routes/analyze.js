@@ -27,7 +27,7 @@ async function validateVAT(vatNumber) {
   }
 
   try {
-    const response = await fetch(`https://api.viesapi.eu/api/check/${countryCode}/${num}`);
+    const r = await fetch(`https://viesapi.eu/api/check/${cc}/${num}`);
     
     if (!response.ok) {
       return { status: 'NOT_VERIFIED' };
