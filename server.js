@@ -70,7 +70,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 AITAX Shopify backend running on port ${PORT}`);
   console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
-});
+
 import('./routes/webhooks.js').then(module => app.use('/api', module.default)).catch(console.error);
 ```
 
@@ -99,3 +99,4 @@ https://app-aitax-backend.onrender.com/api/webhooks/customers/redact
 **Shop redact:**
 ```
 https://app-aitax-backend.onrender.com/api/webhooks/shop/redact
+});
