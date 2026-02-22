@@ -96,6 +96,16 @@ async function analyzeRow(row) {
     return result;
   }
 
+  // Regla 4: Tipo de IVA no reconocido para el país
+  if (!vatIsNull && vatPercent > 0 && isEU(customerCountry)) {
+    const validRates = VAT_RATES[customerCountry];
+    if (validRates && !validRates.includes(vatPercent)) {
+      result.risk_level = 'MEDIO';
+      result.error_type = 'Porcentaje de IVA no reconocido para el país de destino';
+      result.explanation = `El ${vatPercent}% aplicado no coincide con los tipos de IVA vigentes en ${customerCountry}. Tipos válidos: ${validRates.join('%, ')}%`;
+      return result;
+    
+  }
   // Regla 5
   if (sellerCountry === customerCountry && isEU(sellerCountry) &&
       !vatIsNull && vatPercent === 0) {
