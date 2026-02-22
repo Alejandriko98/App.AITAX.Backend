@@ -92,5 +92,5 @@ app.use('/webhooks', express.raw({ type: 'application/json' }), (req, res, next)
 });
 
 // Monta las rutas de webhooks
-const webhookRoutes = require('./routes/webhooks');
+import webhookRoutes from './routes/webhooks.js';
 app.use('/webhooks', webhookRoutes);
