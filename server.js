@@ -73,7 +73,7 @@ app.get('/api/auth/callback', async (req, res) => {
 
 // Rutas
 import('./routes/orders.js').then(module => app.use('/api', module.default)).catch(console.error);
-import('./routes/analyze.js').then(module => app.use('/api', module.default)).catch(console.error);
+import('./routes/analyze.js').then(module => app.use('/api/analyze', module.default)).catch(console.error);
 import('./routes/billing.js').then(module => app.use('/api', module.default)).catch(console.error);
 import('./routes/webhooks.js').then(module => app.use('/api', module.default)).catch(console.error);
 
