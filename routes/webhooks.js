@@ -1,74 +1,52 @@
-import express from 'express';
-import crypto from 'crypto';
-
+// routes/webhooks.js
+const express = require('express');
 const router = express.Router();
+const crypto = require('crypto');
 
-// Middleware para verificar HMAC de Shopify
-function verifyShopifyWebhook(req, res, next) {
-  const hmac = req.get('X-Shopify-Hmac-Sha256');
-  
-  if (!hmac) {
-    console.log('Missing HMAC header');
-    return res.status(401).send('Unauthorized');
-  }
+// Verificar HMAC de Shopify
+function verifyShopifyWebhook(req) {
+  const hmac = req.headers['x-shopify-hmac-sha256'];
+  const secret = process.env.SHOPIFY_API_SECRET;
+  const body = req.rawBody; // necesitas rawBody (ver nota abajo)
 
   const hash = crypto
-    .createHmac('sha256', process.env.SHOPIFY_API_SECRET)
-    .update(JSON.stringify(req.body), 'utf8')
+    .createHmac('sha256', secret)
+    .update(body, 'utf8')
     .digest('base64');
 
-  if (hash !== hmac) {
-    console.log('Invalid HMAC');
-    return res.status(401).send('Unauthorized');
-  }
+  return hash === hmac;
+}
 
+// Middleware para verificar y responder 401 si falla
+function shopifyWebhookAuth(req, res, next) {
+  if (!verifyShopifyWebhook(req)) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
   next();
 }
 
-// Apply middleware to all webhook routes
-router.use('/webhooks/*', verifyShopifyWebhook);
-
-// GDPR Webhook: Customer data request
-router.post('/webhooks/customers/data_request', (req, res) => {
-  const { shop_domain, customer, orders_requested } = req.body;
-  
-  console.log('=== CUSTOMER DATA REQUEST ===');
-  console.log(`Shop: ${shop_domain}`);
-  console.log(`Customer: ${customer.email}`);
-  console.log(`Orders: ${orders_requested}`);
-  
-  // TODO: When you have a database, query and return customer data
-  // For now, just logging (compliant with Shopify requirements)
-  
-  res.status(200).send('OK');
+// customers/data_request
+router.post('/customers/data_request', shopifyWebhookAuth, (req, res) => {
+  const { shop_id, shop_domain, customer, orders_requested } = req.body;
+  console.log(`Data request for customer ${customer?.email} in shop ${shop_domain}`);
+  // Tu app no almacena datos personales → simplemente confirmas recepción
+  res.status(200).json({ message: 'Received' });
 });
 
-// GDPR Webhook: Customer redact (delete data)
-router.post('/webhooks/customers/redact', (req, res) => {
-  const { shop_domain, customer, orders_to_redact } = req.body;
-  
-  console.log('=== CUSTOMER REDACT ===');
-  console.log(`Shop: ${shop_domain}`);
-  console.log(`Customer: ${customer.email}`);
-  console.log(`Orders to redact: ${orders_to_redact}`);
-  
-  // TODO: When you have a database, delete customer data
-  // For now, just logging (compliant with Shopify requirements)
-  
-  res.status(200).send('OK');
+// customers/redact
+router.post('/customers/redact', shopifyWebhookAuth, (req, res) => {
+  const { shop_id, shop_domain, customer, orders_to_redact } = req.body;
+  console.log(`Redact request for customer ${customer?.email} in shop ${shop_domain}`);
+  // Si no guardas datos de clientes, solo confirmas recepción
+  res.status(200).json({ message: 'Received' });
 });
 
-// GDPR Webhook: Shop redact (store uninstalled)
-router.post('/webhooks/shop/redact', (req, res) => {
-  const { shop_domain, shop_id } = req.body;
-  
-  console.log('=== SHOP REDACT ===');
-  console.log(`Shop: ${shop_domain} (ID: ${shop_id})`);
-  
-  // TODO: When you have a database, delete ALL data for this shop
-  // For now, just logging (compliant with Shopify requirements)
-  
-  res.status(200).send('OK');
+// shop/redact
+router.post('/shop/redact', shopifyWebhookAuth, (req, res) => {
+  const { shop_id, shop_domain } = req.body;
+  console.log(`Shop redact request for ${shop_domain}`);
+  // Elimina cualquier dato del shop si lo tienes almacenado
+  res.status(200).json({ message: 'Received' });
 });
 
-export default router;
+module.exports = router;
