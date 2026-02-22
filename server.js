@@ -84,3 +84,13 @@ app.listen(PORT, () => {
   console.log(`🚀 AITAX Shopify backend running on port ${PORT}`);
   console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
 });
+// IMPORTANTE: antes de express.json(), captura el rawBody
+app.use('/webhooks', express.raw({ type: 'application/json' }), (req, res, next) => {
+  req.rawBody = req.body;
+  req.body = JSON.parse(req.body);
+  next();
+});
+
+// Monta las rutas de webhooks
+const webhookRoutes = require('./routes/webhooks');
+app.use('/webhooks', webhookRoutes);
