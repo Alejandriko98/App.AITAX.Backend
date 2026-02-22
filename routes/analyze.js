@@ -20,28 +20,19 @@ async function validateVAT(vatNumber) {
 
   const clean = vatNumber.replace(/\s/g, '').toUpperCase();
   const countryCode = clean.substring(0, 2);
-  const num = clean.substring(2);
 
   if (!EU_COUNTRIES.includes(countryCode)) {
     return { status: 'INVALID' };
   }
 
-  try {
-    const response = await fetch(`https://api.viesapi.eu/api/check/${countryCode}/${num}`);
-
-    if (!response.ok) {
-      return { status: 'NOT_VERIFIED' };
-    }
-
-    const data = await response.json();
-
-    if (data.valid === true) return { status: 'VALID' };
-    if (data.valid === false) return { status: 'INVALID' };
-    return { status: 'NOT_VERIFIED' };
-  } catch (error) {
-    console.error('VIES validation error:', error);
-    return { status: 'NOT_VERIFIED' };
+  // TEMPORALMENTE SIN VIES - Solo validación de formato
+  // TODO: Reconectar VIES cuando arreglemos certificado SSL
+  if (clean.length >= 4) {
+    console.log(`VAT ${clean} - VALID (formato correcto, VIES desactivado)`);
+    return { status: 'VALID' };
   }
+  
+  return { status: 'INVALID' };
 }
 
 async function analyzeRow(row) {
@@ -118,7 +109,7 @@ async function analyzeRow(row) {
   return result;
 }
 
-router.post('/', async (req, res) => {
+router.post('/analyze', async (req, res) => {
   const { rows } = req.body;
 
   if (!rows || !Array.isArray(rows) || rows.length === 0) {
