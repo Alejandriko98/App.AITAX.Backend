@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: shopify-aitax-backend
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: SHOPIFY_API_KEY
+        value: cbd89d8573b113f578e54befec415d37
+      - key: SHOPIFY_API_SECRET
+        value: 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
+      - key: HOST
+        value: https://shopify-aitax-backend.onrender.com
+      - key: SELLER_COUNTRY
+        value: ES
+      - key: NODE_ENV
+        value: production
