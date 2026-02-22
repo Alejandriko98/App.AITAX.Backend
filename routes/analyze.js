@@ -103,8 +103,9 @@ async function analyzeRow(row) {
       result.risk_level = 'MEDIO';
       result.error_type = 'Porcentaje de IVA no reconocido para el país de destino';
       result.explanation = `El ${vatPercent}% aplicado no coincide con los tipos de IVA vigentes en ${customerCountry}. Tipos válidos: ${validRates.join('%, ')}%`;
-      return result;
-   } 
+      rreturn result;
+    }
+  }
   
   // Regla 5
   if (sellerCountry === customerCountry && isEU(sellerCountry) &&
