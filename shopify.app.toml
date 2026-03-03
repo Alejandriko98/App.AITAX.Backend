@@ -1,6 +1,29 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+name = "AITAX"
+client_id = "cbd89d8573b113f578e54befec415d37"
+application_url = "https://aitax-frontend.onrender.com"
+embedded = true
+
+[access_scopes]
+scopes = "read_orders,read_customers"
+
+[auth]
+redirect_urls = [
+  "https://app-aitax-backend.onrender.com/api/auth/callback"
+]
+
 [webhooks]
-api_version = "2024-07"
+api_version = "2026-01"
 
 [[webhooks.subscriptions]]
-compliance_topics = ["customers/data_request", "customers/redact", "shop/redact"]
-uri = "https://app-aitax-backend.onrender.com/webhooks"
+topics = ["customers/data_request"]
+uri = "https://app-aitax-backend.onrender.com/api/webhooks/customers/data_request"
+
+[[webhooks.subscriptions]]
+topics = ["customers/redact"]
+uri = "https://app-aitax-backend.onrender.com/api/webhooks/customers/redact"
+
+[[webhooks.subscriptions]]
+topics = ["shop/redact"]
+uri = "https://app-aitax-backend.onrender.com/api/webhooks/shop/redact"
